@@ -1,0 +1,22 @@
+[
+    {
+        "id": "1",
+        "user" : "adam",
+        "text" : ""
+    },
+    {
+        "id": "2",
+        "user" : "adam",
+        "text" : "a note about #batmat"
+    },
+    {
+        "id": "3",
+        "user" : "adam",
+        "text" : ""
+    },
+    {
+        "id": "4",
+        "user" : "adam",
+        "text" : ""
+    }
+]
