@@ -57,11 +57,37 @@ function getNewZettelId() {
 }
 
 
-app.get('/getById', (req, res) => {
-    let queryId = req.query.id;
-    let zet = getZettelById(queryId);
-    res.send(JSON.stringify(zet));
-})
+// app.get('/burnById', (req, res) => {
+//     let queryId = req.query.id;
+//     let zet = getZettelById(queryId);
+//     res.send(JSON.stringify(zet));
+// })
+
+// app.get('/burn', (req, res) => {
+//     let queryId = req.query.id;
+//     let zet = getZettelById(queryId);
+//     res.send(JSON.stringify(zet));
+// })
+// app.get("/burn"), (req, res) => {
+//     let queryId = req.query.id;
+//     let zet = getZettelById(queryId);
+//     res.send(JSON.stringify(zet));
+// }
+
+
+app.get("/zettel/:zettelId", (req, res) => {
+        console.log("inside get 2");
+        if (req.params.zettelId) {
+        let queryId = req.params.zettelId;
+        let zet = getZettelById(queryId);
+        //res.send(JSON.stringify(zet));
+        res.json(zet)
+    } else {
+        res.setStatus(400);
+    }
+});
+
+
 
 app.post('/zettel', (req, res) => {
     console.log('Got text: ', req.body.text);
@@ -72,11 +98,17 @@ app.post('/zettel', (req, res) => {
         let zet = new Zettel(zettelId, zettelText, user);
         zettels.push(zet);
         res.json(zet);
-        res.sendStatus(200);
     } else {
         res.sendStatus(400);
     }
 })
 
+// app.get("/zettel"), (req, res) => {
+//     console.log("inside get 1");
+//     res.setStatus(400);
+// }
+
+
+
 loadSpecZettels()
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`App listening on port ${port}!`))
