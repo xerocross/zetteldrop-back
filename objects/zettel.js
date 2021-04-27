@@ -1,14 +1,12 @@
-class Zettel {
-
-    id;
-    text;
-    user;
-
-    constructor(id, text, user) {
-      this.id = id;
-      this.text = text;
-      this.user = user;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Zettel = void 0;
+var Zettel = /** @class */ (function () {
+    function Zettel(id, text, user) {
+        this.id = id;
+        this.text = text;
+        this.user = user;
     }
-  }
-
-  exports.Zettel = Zettel
+    return Zettel;
+}());
+exports.Zettel = Zettel;
