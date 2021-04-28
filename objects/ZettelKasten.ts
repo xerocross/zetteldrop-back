@@ -17,6 +17,17 @@ export class ZettelKasten {
         return ids;
     } 
 
+    // static getTags (text : string) {
+    //     let re = / /g
+    //     let matches = text.matchAll(re)
+    //     console.log(matches);
+    //     let ids : string[] = [];
+    //     for (let match of matches) {
+    //         ids.push(match[1]);
+    //     }
+    //     return ids;
+    // }
+
     private getRand() {
         const randomScale = 10000;
         return Math.floor(Math.random()*randomScale);
@@ -41,6 +52,8 @@ export class ZettelKasten {
     getLinkedZettels (zettel : Zettel) {
     }
 
+
+    
 
 
     getIds () : string[] {
