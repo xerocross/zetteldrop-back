@@ -22,7 +22,6 @@ function loadTestZettels() {
 
 
 app.get("/zettel/:zettelId", (req : any, res : any) => {
-        console.log("inside get 2");
         if (req.params.zettelId) {
         let queryId = req.params.zettelId;
         let zet = zettelkasten.getZettelById(queryId);
@@ -54,7 +53,6 @@ app.post('/zettel', (req : any, res : any) => {
 app.post('/parselinks', (req : any, res : any) => {
     try {
         if (req.body.text) {
-            console.log("text", req.body.text);
             let searchText = req.body.text;
             let ids = ZettelKasten.getLinksFromString(searchText);
             res.json(ids);
@@ -69,4 +67,9 @@ app.post('/parselinks', (req : any, res : any) => {
 
 
 loadTestZettels()
-app.listen(port, () => console.log(`App listening on port ${port}!`))
+
+app.listen(port, () => {
+    if (console) {
+        console.log(`App listening on port ${port}!`)
+    }
+});
