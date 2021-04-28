@@ -53,11 +53,8 @@ export class ZettelKasten {
     }
 
 
-    
-
-
     getIds () : string[] {
-        let ids = [];
+        let ids: string[] = [];
         for (let zet of this.zettels) {
             ids.push(zet.id);
         }

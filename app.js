@@ -43,7 +43,6 @@ function loadTestZettels() {
     }
 }
 app.get("/zettel/:zettelId", function (req, res) {
-    console.log("inside get 2");
     if (req.params.zettelId) {
         var queryId = req.params.zettelId;
         var zet = zettelkasten.getZettelById(queryId);
@@ -56,41 +55,41 @@ app.get("/zettel/:zettelId", function (req, res) {
     }
 });
 app.post('/zettel', function (req, res) {
-    if (req.body.text) {
-        var zettelText = req.body.text;
-        var zettelId = zettelkasten.getNewZettelId();
-        var user = req.body.user;
-        var zet = new zettel_1.Zettel(zettelId, zettelText, user);
-        zettelkasten.addZettel(zet);
-        res.json(zet);
+    try {
+        if (req.body.text) {
+            var zettelText = req.body.text;
+            var zettelId = zettelkasten.getNewZettelId();
+            var user = req.body.user;
+            var zet = new zettel_1.Zettel(zettelId, zettelText, user);
+            zettelkasten.addZettel(zet);
+            res.json(zet);
+        }
+        else {
+            res.sendStatus(400);
+        }
     }
-    else {
-        res.sendStatus(400);
+    catch (e) {
+        res.sendStatus(500);
     }
 });
 app.post('/parselinks', function (req, res) {
-    console.log("links");
-    if (req.body.text) {
-        console.log("text", req.body.text);
-        var searchText = req.body.text;
-        var ids = ZettelKasten.getLinksFromString(searchText);
-        res.json(ids);
+    try {
+        if (req.body.text) {
+            var searchText = req.body.text;
+            var ids = ZettelKasten.getLinksFromString(searchText);
+            res.json(ids);
+        }
+        else {
+            res.sendStatus(400);
+        }
     }
-    else {
-        res.sendStatus(400);
-    }
-});
-app.post('/link', function (req, res) {
-    console.log("links");
-    if (req.body.text) {
-        console.log("text", req.body.text);
-        var searchText = req.body.text;
-        var ids = ZettelKasten.getLinksFromString(searchText);
-        res.json(ids);
-    }
-    else {
-        res.sendStatus(400);
+    catch (e) {
+        res.sendStatus(500);
     }
 });
 loadTestZettels();
-app.listen(port, function () { return console.log("App listening on port " + port + "!"); });
+app.listen(port, function () {
+    if (console) {
+        console.log("App listening on port " + port + "!");
+    }
+});
