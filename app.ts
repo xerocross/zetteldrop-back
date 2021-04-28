@@ -3,7 +3,6 @@ import { Zettel } from "./objects/zettel";
 const { ZettelKasten } = require("./objects/zettelkasten")
 
 import fs from 'fs';
-import cors from "cors";
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -36,41 +35,37 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
 });
 
 app.post('/zettel', (req : any, res : any) => {
-    if (req.body.text) {
-        let zettelText = req.body.text;
-        let zettelId = zettelkasten.getNewZettelId()
-        let user = req.body.user;
-        let zet = new Zettel(zettelId, zettelText, user);
-        zettelkasten.addZettel(zet);
-        res.json(zet);
-    } else {
-        res.sendStatus(400);
+    try {
+        if (req.body.text) {
+            let zettelText = req.body.text;
+            let zettelId = zettelkasten.getNewZettelId()
+            let user = req.body.user;
+            let zet = new Zettel(zettelId, zettelText, user);
+            zettelkasten.addZettel(zet);
+            res.json(zet);
+        } else {
+            res.sendStatus(400);
+        }
+    } catch (e) {
+        res.sendStatus(500);
     }
 })
 
 app.post('/parselinks', (req : any, res : any) => {
-    console.log("links");
-    if (req.body.text) {
-        console.log("text", req.body.text);
-        let searchText = req.body.text;
-        let ids = ZettelKasten.getLinksFromString(searchText);
-        res.json(ids);
-    } else {
-        res.sendStatus(400);
+    try {
+        if (req.body.text) {
+            console.log("text", req.body.text);
+            let searchText = req.body.text;
+            let ids = ZettelKasten.getLinksFromString(searchText);
+            res.json(ids);
+        } else {
+            res.sendStatus(400);
+        }
     }
-})
-
-app.post('/link', (req : any, res : any) => {
-    console.log("links");
-    if (req.body.text) {
-        console.log("text", req.body.text);
-        let searchText = req.body.text;
-        let ids = ZettelKasten.getLinksFromString(searchText);
-        res.json(ids);
-    } else {
-        res.sendStatus(400);
+    catch (e) {
+        res.sendStatus(500);
     }
-})
+});
 
 
 loadTestZettels()
