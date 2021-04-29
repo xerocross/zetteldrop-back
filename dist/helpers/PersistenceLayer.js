@@ -92,7 +92,11 @@ var PersistenceLayer = /** @class */ (function () {
         return this.isInitiated;
     };
     PersistenceLayer.prototype.getClient = function () {
-        return this.client;
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, this.client];
+            });
+        });
     };
     PersistenceLayer.prototype.saveNewUser = function (user) {
         return __awaiter(this, void 0, void 0, function () {

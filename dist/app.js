@@ -19,7 +19,8 @@ var zettel_1 = require("./objects/zettel");
 var ZettelKasten = require("./objects/zettelkasten").ZettelKasten;
 var User = require("./objects/User").User;
 var UserBase = require("./objects/UserBase").UserBase;
-var PersistenceLayer_1 = require("./helpers/PersistenceLayer");
+// import { PersistenceLayer } from "./helpers/PersistenceLayer"
+var PersistenceLayer = require("./helpers/PersistenceLayer").PersistenceLayer;
 var express_session_1 = __importDefault(require("express-session"));
 var fs_1 = __importDefault(require("fs"));
 var app = express_1.default();
@@ -28,7 +29,7 @@ app.use(express_1.default.urlencoded({ extended: false }));
 app.use(express_1.default.json({}));
 app.use(express_session_1.default({ secret: "Shh, its a secret!" }));
 var userBase = new UserBase();
-var persistenceLayer = new PersistenceLayer_1.PersistenceLayer(userBase);
+var persistenceLayer = new PersistenceLayer(userBase);
 var zettelkasten = new ZettelKasten(persistenceLayer);
 function loadTestZettels() {
     var e_1, _a;
@@ -145,6 +146,7 @@ app.get("/zettel/:zettelId", function (req, res) {
     try {
         if (!isLoggedIn(req)) {
             res.sendStatus(403);
+            return;
         }
         var username = req.session.user;
         if (req.params.zettelId) {
@@ -156,7 +158,9 @@ app.get("/zettel/:zettelId", function (req, res) {
                 });
             }
             else {
+                console.log("responding forbidden because user is not allowed to see zettel without logging in");
                 res.sendStatus(403);
+                return;
             }
         }
         else {
@@ -177,9 +181,15 @@ app.post('/zettel', function (req, res) {
             var zettelText = req.body.text;
             var zettelId = zettelkasten.getNewZettelId();
             var user = req.session.user;
-            var zet = new zettel_1.Zettel(zettelId, zettelText, user);
-            zettelkasten.addZettel(zet);
-            res.json(zet);
+            var zet_1 = new zettel_1.Zettel(zettelId, zettelText, user);
+            zettelkasten.addZettel(zet_1)
+                .then(function () {
+                res.json(zet_1);
+            })
+                .catch(function (err) {
+                console.log(err);
+                res.sendStatus(500);
+            });
         }
         else {
             res.sendStatus(400);
@@ -204,11 +214,12 @@ app.post('/parselinks', function (req, res) {
         res.sendStatus(500);
     }
 });
-loadTestZettels();
-loadTestUsers();
+//loadTestZettels();
+//loadTestUsers();
 app.use('/', express_1.default.static('public'));
 persistenceLayer.init()
     .then(function () {
+    zettelkasten.loadZettelsFromPersistenceLayer();
     app.listen(port, function () {
         if (console) {
             console.log("App listening on port " + port + "!");

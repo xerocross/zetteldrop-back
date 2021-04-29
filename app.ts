@@ -3,7 +3,9 @@ import { Zettel } from "./objects/zettel";
 const { ZettelKasten } = require("./objects/zettelkasten");
 const { User } = require("./objects/User");
 const { UserBase } = require("./objects/UserBase");
-import { PersistenceLayer } from "./helpers/PersistenceLayer"
+const { ErrorMessages } = require("./helpers/ErrorMessages")
+// import { PersistenceLayer } from "./helpers/PersistenceLayer"
+const { PersistenceLayer } = require("./helpers/PersistenceLayer")
 import session from "express-session"
 
 import fs from 'fs';
@@ -38,19 +40,6 @@ function loadTestUsers() {
         userBase.addUser(user);
     }
 }
-
-
-app.get('/count', function(req: any, res : any) {
-    console.log("inside count");
-    if(req.session.page_views){
-       req.session.page_views++;
-       res.send("You visited this page " + req.session.page_views + " times");
-    } else {
-       req.session.page_views = 1;
-       res.send("Welcome to this page for the first time!");
-    }
- });
-
 
  app.get('/usertest', function(req: any, res : any) {
     if(req.session.user) {
@@ -114,6 +103,8 @@ function isLoggedIn(req: any) {
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown,"guid:41be23f8-9ca5-4944-9261-7d85364d7d7c")
+        console.log(e);
         res.sendStatus(500);
     }
  });
@@ -123,6 +114,7 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
     try {
         if (!isLoggedIn(req)) {
             res.sendStatus(403);
+            return;
         }
         let username = req.session.user;
 
@@ -135,7 +127,9 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
                     "zettel" : zet
                 })
             } else {
+                console.log("responding forbidden because user is not allowed to see zettel without logging in");
                 res.sendStatus(403);
+                return;
             }
 
             
@@ -143,13 +137,11 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
             res.sendStatus(400);
         }
     } catch (e) {
+        console.log(ErrorMessages.unknown,"guid:e4e4d583-a729-48b4-b594-42f67763e290");
+        console.log(e);
         res.sendStatus(500);
     }
 });
-
-
-
-
 
 function authenticate(username : string, password : string) {
 
@@ -178,6 +170,8 @@ app.post('/zettel', (req : any, res : any) => {
             res.sendStatus(400);
         }
     } catch (e) {
+        console.log(ErrorMessages.unknown,"guid: 034402be-ba15-4f62-b63f-745e8d8b280c");
+        console.log(e);
         res.sendStatus(500);
     }
 })
@@ -193,18 +187,17 @@ app.post('/parselinks', (req : any, res : any) => {
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown,"guid: 915d1e04-6af8-4218-aee7-3b9486c5ccb6");
+        console.log(e);
         res.sendStatus(500);
     }
 });
 
-
-loadTestZettels();
-loadTestUsers();
 app.use('/', express.static('public'));
-
 
 persistenceLayer.init()
 .then(()=>{
+    zettelkasten.loadZettelsFromPersistenceLayer();
     app.listen(port, () => {
         if (console) {
             console.log(`App listening on port ${port}!`)
