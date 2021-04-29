@@ -17,6 +17,9 @@ export declare class ZettelKasten {
     getZettelById(id: string): Zettel | null;
     isZettleExists(id: string): boolean;
     getLinkedZettels(zettel: Zettel): void;
+    queryZettles(username: string, queryString: string): Zettel[];
+    findZettelsByTags(tags: string[]): void;
+    getZettelsByIds(ids: string[]): Zettel[];
     loadZettelsFromPersistenceLayer(): Promise<void>;
-    getIds(): string[];
+    getIds(user: User): string[];
 }

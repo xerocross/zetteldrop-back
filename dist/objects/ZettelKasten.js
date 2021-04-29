@@ -50,6 +50,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZettelKasten = void 0;
 var PersistenceLayer_1 = require("../helpers/PersistenceLayer");
 var zettel_1 = require("./zettel");
+var StringUtils_1 = require("../helpers/StringUtils");
+var ZettelList_1 = require("./ZettelList");
 var ZettelKasten = /** @class */ (function () {
     function ZettelKasten(persistenceLayer) {
         this.zettels = [];
@@ -92,16 +94,6 @@ var ZettelKasten = /** @class */ (function () {
         });
         return zettels;
     };
-    // static getTags (text : string) {
-    //     let re = / /g
-    //     let matches = text.matchAll(re)
-    //     console.log(matches);
-    //     let ids : string[] = [];
-    //     for (let match of matches) {
-    //         ids.push(match[1]);
-    //     }
-    //     return ids;
-    // }
     ZettelKasten.prototype.getRand = function () {
         var randomScale = 10000;
         return Math.floor(Math.random() * randomScale);
@@ -170,6 +162,26 @@ var ZettelKasten = /** @class */ (function () {
     };
     ZettelKasten.prototype.getLinkedZettels = function (zettel) {
     };
+    ZettelKasten.prototype.queryZettles = function (username, queryString) {
+        var tags = StringUtils_1.StringUtils.getHashtags(queryString);
+        var zettelList = new ZettelList_1.ZettelList(this.zettels);
+        zettelList = zettelList.filterByUser(username);
+        tags.forEach(function (tag) {
+            zettelList = zettelList.filterByTag(tag);
+        });
+        return zettelList.zettels;
+    };
+    ZettelKasten.prototype.findZettelsByTags = function (tags) {
+    };
+    ZettelKasten.prototype.getZettelsByIds = function (ids) {
+        var zettels = [];
+        this.zettels.forEach(function (zet) {
+            if (ids.includes(zet.id)) {
+                zettels.push(zet);
+            }
+        });
+        return zettels;
+    };
     ZettelKasten.prototype.loadZettelsFromPersistenceLayer = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
@@ -196,13 +208,15 @@ var ZettelKasten = /** @class */ (function () {
             });
         });
     };
-    ZettelKasten.prototype.getIds = function () {
+    ZettelKasten.prototype.getIds = function (user) {
         var e_2, _a;
         var ids = [];
         try {
             for (var _b = __values(this.zettels), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var zet = _c.value;
-                ids.push(zet.id);
+                if (zet.user == user.username) {
+                    ids.push(zet.id);
+                }
             }
         }
         catch (e_2_1) { e_2 = { error: e_2_1 }; }

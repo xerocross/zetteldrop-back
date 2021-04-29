@@ -49,7 +49,6 @@ export class UserBase {
         } else {
             return false;
         }
-
     }
 
     register(username : string, password : string) :void {

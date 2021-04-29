@@ -17,14 +17,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
 var zettel_1 = require("./objects/zettel");
 var ZettelKasten = require("./objects/zettelkasten").ZettelKasten;
-var User = require("./objects/User").User;
+//const { User } = require("./objects/User");
 var UserBase = require("./objects/UserBase").UserBase;
+var User_1 = require("./objects/User");
+var ErrorMessages = require("./helpers/ErrorMessages").ErrorMessages;
 // import { PersistenceLayer } from "./helpers/PersistenceLayer"
 var PersistenceLayer = require("./helpers/PersistenceLayer").PersistenceLayer;
 var express_session_1 = __importDefault(require("express-session"));
 var fs_1 = __importDefault(require("fs"));
 var app = express_1.default();
 var port = process.env.PORT || 3000;
+var user = null;
 app.use(express_1.default.urlencoded({ extended: false }));
 app.use(express_1.default.json({}));
 app.use(express_session_1.default({ secret: "Shh, its a secret!" }));
@@ -57,8 +60,8 @@ function loadTestUsers() {
     try {
         for (var userObjects_1 = __values(userObjects), userObjects_1_1 = userObjects_1.next(); !userObjects_1_1.done; userObjects_1_1 = userObjects_1.next()) {
             var userObj = userObjects_1_1.value;
-            var user = new User(userObj.username, userObj.password);
-            userBase.addUser(user);
+            var user_1 = new User_1.User(userObj.username, userObj.password);
+            userBase.addUser(user_1);
         }
     }
     catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -69,17 +72,6 @@ function loadTestUsers() {
         finally { if (e_2) throw e_2.error; }
     }
 }
-app.get('/count', function (req, res) {
-    console.log("inside count");
-    if (req.session.page_views) {
-        req.session.page_views++;
-        res.send("You visited this page " + req.session.page_views + " times");
-    }
-    else {
-        req.session.page_views = 1;
-        res.send("Welcome to this page for the first time!");
-    }
-});
 app.get('/usertest', function (req, res) {
     if (req.session.user) {
         res.send("Welcome, " + req.session.user + ".");
@@ -104,7 +96,8 @@ app.post('/login', function (req, res) {
     var password = req.body.password;
     var isValidCredentials = userBase.checkUserLogin(username, password);
     if (isValidCredentials) {
-        req.session.user = username;
+        user = userBase.getUserByName(username);
+        req.session.user = user === null || user === void 0 ? void 0 : user.username;
         res.send("Welcome, " + req.session.user + ".");
     }
     else {
@@ -130,15 +123,17 @@ app.post('/register', function (req, res) {
             return;
         }
         else {
-            var user = new User(username, password);
-            userBase.addUser(user);
-            persistenceLayer.saveNewUser(user);
+            var user_2 = new User_1.User(username, password);
+            userBase.addUser(user_2);
+            persistenceLayer.saveNewUser(user_2);
             req.session.user = username;
             res.status(200).send("Created new user " + username);
             return;
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown, "guid:41be23f8-9ca5-4944-9261-7d85364d7d7c");
+        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -168,6 +163,8 @@ app.get("/zettel/:zettelId", function (req, res) {
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown, "guid:e4e4d583-a729-48b4-b594-42f67763e290");
+        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -180,8 +177,8 @@ app.post('/zettel', function (req, res) {
         if (isLoggedIn(req) && req.body.text) {
             var zettelText = req.body.text;
             var zettelId = zettelkasten.getNewZettelId();
-            var user = req.session.user;
-            var zet_1 = new zettel_1.Zettel(zettelId, zettelText, user);
+            var user_3 = req.session.user;
+            var zet_1 = new zettel_1.Zettel(zettelId, zettelText, user_3);
             zettelkasten.addZettel(zet_1)
                 .then(function () {
                 res.json(zet_1);
@@ -196,6 +193,8 @@ app.post('/zettel', function (req, res) {
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown, "guid: 034402be-ba15-4f62-b63f-745e8d8b280c");
+        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -211,11 +210,36 @@ app.post('/parselinks', function (req, res) {
         }
     }
     catch (e) {
+        console.log(ErrorMessages.unknown, "guid: 915d1e04-6af8-4218-aee7-3b9486c5ccb6");
+        console.log(e);
         res.sendStatus(500);
     }
 });
-//loadTestZettels();
-//loadTestUsers();
+app.get("/zettels", function (req, res) {
+    if (user == null) {
+        res.status(400).send("not logged in");
+        return;
+    }
+    else {
+        var zettels = zettelkasten.getIds(user);
+        res.json(zettels);
+        return;
+    }
+});
+app.post("/zettels/query", function (req, res) {
+    var queryString = req.body.query;
+    if (queryString == null) {
+        res.status(400).send("no query string");
+        return;
+    }
+    if (user == null) {
+        res.status(400).send("not logged in");
+        return;
+    }
+    var username = user.username;
+    var zettels = zettelkasten.queryZettles(username, queryString);
+    res.json(zettels);
+});
 app.use('/', express_1.default.static('public'));
 persistenceLayer.init()
     .then(function () {

@@ -1,6 +1,8 @@
 import { PersistenceLayer } from "../helpers/PersistenceLayer";
 import { User } from "./User"
 import { Zettel } from "./zettel";
+import { StringUtils } from "../helpers/StringUtils";
+import { ZettelList } from "./ZettelList";
 
 
 export class ZettelKasten {
@@ -39,17 +41,6 @@ export class ZettelKasten {
         })
         return zettels;
     }
-
-    // static getTags (text : string) {
-    //     let re = / /g
-    //     let matches = text.matchAll(re)
-    //     console.log(matches);
-    //     let ids : string[] = [];
-    //     for (let match of matches) {
-    //         ids.push(match[1]);
-    //     }
-    //     return ids;
-    // }
 
     private getRand() {
         const randomScale = 10000;
@@ -109,6 +100,30 @@ export class ZettelKasten {
     }
 
     
+    queryZettles (username : string , queryString : string) : Zettel[] {
+        let tags : string[] = StringUtils.getHashtags(queryString);
+        let zettelList = new ZettelList(this.zettels);
+        zettelList = zettelList.filterByUser(username);
+        tags.forEach(tag=> {
+            zettelList = zettelList.filterByTag(tag)
+        })
+        return zettelList.zettels;
+    }
+
+
+    findZettelsByTags(tags : string[]) {
+
+    }
+
+    getZettelsByIds (ids : string[]) {
+        let zettels : Zettel[] = [];
+        this.zettels.forEach((zet) => {
+            if (ids.includes(zet.id)) {
+                zettels.push(zet);
+            }
+        })
+        return zettels;
+    }
 
     async loadZettelsFromPersistenceLayer() {
         return this.persistenceLayer.getClient()
@@ -133,10 +148,12 @@ export class ZettelKasten {
         });
     }
 
-    getIds () : string[] {
+    getIds (user : User) : string[] {
         let ids: string[] = [];
         for (let zet of this.zettels) {
-            ids.push(zet.id);
+            if (zet.user == user.username) {
+                ids.push(zet.id);
+            }
         }
         return ids;
     }

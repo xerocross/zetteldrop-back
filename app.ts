@@ -1,8 +1,9 @@
 import express from 'express';
 import { Zettel } from "./objects/zettel";
 const { ZettelKasten } = require("./objects/zettelkasten");
-const { User } = require("./objects/User");
+//const { User } = require("./objects/User");
 const { UserBase } = require("./objects/UserBase");
+import { User } from "./objects/User"
 const { ErrorMessages } = require("./helpers/ErrorMessages")
 // import { PersistenceLayer } from "./helpers/PersistenceLayer"
 const { PersistenceLayer } = require("./helpers/PersistenceLayer")
@@ -11,6 +12,7 @@ import session from "express-session"
 import fs from 'fs';
 const app = express()
 const port = process.env.PORT || 3000
+let user : User | null = null;
 
 app.use(express.urlencoded({extended:false}));
 app.use(express.json({}));
@@ -65,9 +67,12 @@ function isLoggedIn(req: any) {
     let username = req.body.username;
     let password = req.body.password;
     let isValidCredentials = userBase.checkUserLogin(username, password);
+    
     if (isValidCredentials) {
-        req.session.user = username
+        user = userBase.getUserByName(username);
+        req.session.user = user?.username;
         res.send("Welcome, " + req.session.user + ".");
+
     } else {
         res.send("Invalid credentials.");
     }
@@ -192,6 +197,35 @@ app.post('/parselinks', (req : any, res : any) => {
         res.sendStatus(500);
     }
 });
+
+app.get("/zettels", (req : any, res: any) => {
+
+    if (user == null) {
+        res.status(400).send("not logged in");
+        return;
+    } else {
+        let zettels = zettelkasten.getIds(user);
+        res.json(zettels);
+        return;
+    }
+});
+
+
+app.post("/zettels/query", (req, res) => {
+    let queryString = req.body.query;
+    if (queryString == null) {
+        res.status(400).send("no query string");
+        return;
+    }
+    if (user == null) {
+        res.status(400).send("not logged in");
+        return;
+    }
+    let username = user.username;
+    let zettels : Zettel[] = zettelkasten.queryZettles(username, queryString);
+    res.json(zettels);
+});
+
 
 app.use('/', express.static('public'));
 
