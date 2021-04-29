@@ -12,9 +12,11 @@ var __values = (this && this.__values) || function(o) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZettelKasten = void 0;
+var zettel_1 = require("./zettel");
 var ZettelKasten = /** @class */ (function () {
-    function ZettelKasten() {
+    function ZettelKasten(persistenceLayer) {
         this.zettels = [];
+        this.persistenceLayer = persistenceLayer;
     }
     ZettelKasten.getLinksFromString = function (text) {
         var e_1, _a;
@@ -39,6 +41,15 @@ var ZettelKasten = /** @class */ (function () {
         }
         return ids;
     };
+    ZettelKasten.getPersistenceObject = function (zettelkasten) {
+        var persistenceArray = [];
+        var zettels = zettelkasten.zettels;
+        zettels.forEach(function (zettel) {
+            console.log("adding zettel to database: ", zettel);
+            persistenceArray.push(zettel_1.Zettel.getPersistenceObject(zettel));
+        });
+        return zettels;
+    };
     // static getTags (text : string) {
     //     let re = / /g
     //     let matches = text.matchAll(re)
@@ -53,6 +64,42 @@ var ZettelKasten = /** @class */ (function () {
         var randomScale = 10000;
         return Math.floor(Math.random() * randomScale);
     };
+    // async saveZettels () {
+    //     try {
+    //         if (this.client != null) {
+    //             let db = await this.client.db(PersistenceLayer.ZETTELDROP);
+    //             const collection = db.collection(PersistenceLayer.ZETTELKASTEN);
+    //             let zetList = ZettelKasten.getPersistenceObject(this.zettelKasten)
+    //             collection.deleteMany({});
+    //             zetList.forEach(zettel => {
+    //                 collection.insertOne(zettel);
+    //             });
+    //         } else {
+    //             console.log("client was null");
+    //         }
+    //     } catch (e) {
+    //         console.error(e);
+    //     } finally {
+    //         // if (this.client) {
+    //         //     await this.client.close();
+    //         // }
+    //     }
+    // // }
+    ZettelKasten.saveZettel = function (zettel) {
+        //let client = this.persistenceLayer
+        try {
+            // if (this client != null) {
+            //     // let db = await this.persistenceLayer  .client.db(PersistenceLayer.ZETTELDROP);
+            //     // const collection = db.collection(PersistenceLayer.USER);
+            //     // collection.insertOne(User.getPersistenceObject(user))
+            // } else {
+            //     console.log("client was null");
+            // }
+        }
+        catch (e) {
+            console.error(e);
+        }
+    };
     ZettelKasten.prototype.getNewZettelId = function () {
         return Date.now().toString() + this.getRand().toString();
     };
@@ -60,11 +107,14 @@ var ZettelKasten = /** @class */ (function () {
         this.zettels.push(zettel);
     };
     ZettelKasten.prototype.getZettelById = function (id) {
+        var zet = null;
         for (var i = 0; i < this.zettels.length; i++) {
             if (this.zettels[i].id == id) {
-                return this.zettels[i];
+                zet = this.zettels[i];
+                break;
             }
         }
+        return zet;
     };
     ZettelKasten.prototype.getLinkedZettels = function (zettel) {
     };

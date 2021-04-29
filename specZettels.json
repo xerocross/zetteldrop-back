@@ -11,8 +11,8 @@
     },
     {
         "id": "3",
-        "user" : "adam",
-        "text" : ""
+        "user" : "john",
+        "text" : "this is john's note"
     },
     {
         "id": "4",

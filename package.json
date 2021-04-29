@@ -6,16 +6,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
+    "dev": "npm run build && npm run start",
     "postinstall": "npm run build",
-    "start": "node app.js"
+    "start": "node dist/app.js"
   },
   "author": "Adam Cross",
   "license": "ISC",
   "dependencies": {
+    "@types/express-session": "^1.17.3",
+    "@types/mongodb": "^3.6.12",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-session": "^1.17.1",
     "fs": "0.0.1-security",
+    "mongodb": "^3.6.6",
     "typescript": "^4.2.4"
   },
   "devDependencies": {

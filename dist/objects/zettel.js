@@ -7,6 +7,13 @@ var Zettel = /** @class */ (function () {
         this.text = text;
         this.user = user;
     }
+    Zettel.getPersistenceObject = function (zettel) {
+        return {
+            id: zettel.id,
+            text: zettel.text,
+            user: zettel.user
+        };
+    };
     return Zettel;
 }());
 exports.Zettel = Zettel;
