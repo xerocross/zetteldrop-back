@@ -92,6 +92,15 @@ export class ZettelKasten {
         return zet;
     }
 
+    userQueryById(username : string, id : string) : Zettel | null {
+        let zet = this.getZettelById(id);
+        if (zet && zet.user == username) {
+            return zet;
+        } else {
+            return null;
+        }
+    }
+
     isZettleExists( id : string) {
         return (this.getZettelById(id) != null);
     }
@@ -144,7 +153,7 @@ export class ZettelKasten {
 
                 })
             }
-            
+            return true
         });
     }
 

@@ -157,6 +157,15 @@ var ZettelKasten = /** @class */ (function () {
         }
         return zet;
     };
+    ZettelKasten.prototype.userQueryById = function (username, id) {
+        var zet = this.getZettelById(id);
+        if (zet && zet.user == username) {
+            return zet;
+        }
+        else {
+            return null;
+        }
+    };
     ZettelKasten.prototype.isZettleExists = function (id) {
         return (this.getZettelById(id) != null);
     };
@@ -204,6 +213,7 @@ var ZettelKasten = /** @class */ (function () {
                                 }
                             });
                         }
+                        return true;
                     })];
             });
         });

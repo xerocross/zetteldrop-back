@@ -1,62 +1,20 @@
 import express from 'express';
-import { Zettel } from "./objects/zettel";
-const { ZettelKasten } = require("./objects/zettelkasten");
-//const { User } = require("./objects/User");
-const { UserBase } = require("./objects/UserBase");
-import { User } from "./objects/User"
-const { ErrorMessages } = require("./helpers/ErrorMessages")
-// import { PersistenceLayer } from "./helpers/PersistenceLayer"
-const { PersistenceLayer } = require("./helpers/PersistenceLayer")
+import { ErrorMessages } from "./helpers/ErrorMessages"
+import {ZettelDrop} from "./objects/ZettelDrop"
 import session from "express-session"
 
-import fs from 'fs';
 const app = express()
 const port = process.env.PORT || 3000
-let user : User | null = null;
 
 app.use(express.urlencoded({extended:false}));
 app.use(express.json({}));
-app.use(session({secret: "Shh, its a secret!"}));
+app.use(session({"secret" : "31efaea8-c74e-4896-b191-c86d343d8d2c"}));
 
+let zettelDrop = new ZettelDrop();
 
-
-let userBase = new UserBase();
-let persistenceLayer =  new PersistenceLayer(userBase);
-let zettelkasten = new ZettelKasten(persistenceLayer);
-
-
-function loadTestZettels() {
-    let rawdata = fs.readFileSync('specZettels.json');
-    let zettelObjects = JSON.parse(rawdata.toString());
-    for (let zettelObj of zettelObjects) {
-        let zet = new Zettel(zettelObj.id, zettelObj.text, zettelObj.user)
-        zettelkasten.addZettel(zet);
-    }
-}
-
-function loadTestUsers() {
-    let rawData = fs.readFileSync('specUsers.json');
-    let userObjects = JSON.parse(rawData.toString());
-    for (let userObj of userObjects) {
-        let user = new User(userObj.username, userObj.password);
-        userBase.addUser(user);
-    }
-}
-
- app.get('/usertest', function(req: any, res : any) {
-    if(req.session.user) {
-       res.send("Welcome, " + req.session.user + ".");
-    } else {
-       res.send("You are not logged in.");
-    }
- });
-
-function isLoggedIn(req: any) {
-    return (req.session.user);
-}
 
  app.get('/isloggedin', function(req: any, res : any) {
-    if (req.session.user) {
+    if (zettelDrop.isLoggedIn()) {
         res.send("true");
     } else {
         res.send("false");
@@ -66,21 +24,21 @@ function isLoggedIn(req: any) {
  app.post('/login', function(req: any, res : any) {
     let username = req.body.username;
     let password = req.body.password;
-    let isValidCredentials = userBase.checkUserLogin(username, password);
-    
-    if (isValidCredentials) {
-        user = userBase.getUserByName(username);
-        req.session.user = user?.username;
+    let isLoginSuccessful = zettelDrop.login(username, password);
+    if (isLoginSuccessful) {
+        let username = zettelDrop.user?.username;
+        req.session.user = username;
         res.send("Welcome, " + req.session.user + ".");
-
     } else {
         res.send("Invalid credentials.");
     }
  });
  
+
  app.post('/logout', function(req: any, res : any) {
     req.session.user = null;
-    res.send("User has been logged out.");
+    zettelDrop.logout();
+    res.status(200).send("User has been logged out.");
  });
 
 
@@ -90,22 +48,11 @@ function isLoggedIn(req: any) {
             res.status(400).send("You are logged in as " + req.session.user + ". To register as a new user, log out first.");
             return;
         }
-
         let username = req.body.username;
         let password = req.body.password;
-        console.log("creating new user", username, password);
-        let isUserExists = userBase.checkUsernameExists(username);
-        if (isUserExists) {
-            res.status(400).send("Invalid username.");
-            return;
-        } else {
-            let user = new User(username, password);
-            userBase.addUser(user);
-            persistenceLayer.saveNewUser(user);
-            req.session.user = username
-            res.status(200).send("Created new user " + username);
-            return;
-        }
+        let response : any = zettelDrop.registerNewUser(username, password);
+        res.status(response.code).send(response.message);
+        return;
     }
     catch (e) {
         console.log(ErrorMessages.unknown,"guid:41be23f8-9ca5-4944-9261-7d85364d7d7c")
@@ -122,22 +69,23 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
             return;
         }
         let username = req.session.user;
+        let id = req.params.zettelId;
 
-        if (req.params.zettelId) {
-            let queryId = req.params.zettelId;
-            let zet = zettelkasten.getZettelById(queryId);
+        if (zettelDrop.zettelKasten == null) {
+            throw new Error(ErrorMessages.OUT_OF_ORDER_EXCEPTION);
+        }
 
-            if (zet != null && zet.user == username) {
+        if (id) {
+            let zet = zettelDrop.zettelKasten.userQueryById(username, id);
+            if (zet != null) {
                 res.json({
                     "zettel" : zet
                 })
             } else {
-                console.log("responding forbidden because user is not allowed to see zettel without logging in");
-                res.sendStatus(403);
+                console.log("requested " + id + ": no such zettel owned by the user was found")
+                res.sendStatus(404);
                 return;
             }
-
-            
         } else {
             res.sendStatus(400);
         }
@@ -148,32 +96,31 @@ app.get("/zettel/:zettelId", (req : any, res : any) => {
     }
 });
 
-function authenticate(username : string, password : string) {
 
+function isLoggedIn(req) {
+    return (req.session.user != null)
 }
 
-function login(username : string, password : string) {
-
-}
 
 app.post('/zettel', (req : any, res : any) => {
+    if (!isLoggedIn(req)) {
+        res.sendStatus(403);
+        return;
+    }
+    let zettelText = req.body.text;
     try {
-        if (isLoggedIn(req) && req.body.text) {
-            let zettelText = req.body.text;
-            let zettelId = zettelkasten.getNewZettelId()
-            let user = req.session.user;
-            let zet = new Zettel(zettelId, zettelText, user);
-            zettelkasten.addZettel(zet)
-            .then(()=> {
-                res.json(zet);
-            })
-            .catch((err) => {
-                console.log(err);
-                res.sendStatus(500);
-            })
-        } else {
-            res.sendStatus(400);
-        }
+        zettelDrop.createNewZettel(zettelText)
+        .then((response)=> {
+            if (response.status == 201) {
+                res.status(response.status).json(response.zettel);
+            } else {
+                res.status(response.status).send(response.message);
+            }
+        })
+        .catch((e)=> {
+            console.log(e);
+            res.sendStatus(500);
+        })
     } catch (e) {
         console.log(ErrorMessages.unknown,"guid: 034402be-ba15-4f62-b63f-745e8d8b280c");
         console.log(e);
@@ -181,57 +128,60 @@ app.post('/zettel', (req : any, res : any) => {
     }
 })
 
-app.post('/parselinks', (req : any, res : any) => {
-    try {
-        if (req.body.text) {
-            let searchText = req.body.text;
-            let ids = ZettelKasten.getLinksFromString(searchText);
-            res.json(ids);
-        } else {
-            res.sendStatus(400);
-        }
-    }
-    catch (e) {
-        console.log(ErrorMessages.unknown,"guid: 915d1e04-6af8-4218-aee7-3b9486c5ccb6");
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
+// app.post('/parselinks', (req : any, res : any) => {
+//     try {
+//         if (req.body.text) {
+//             let searchText = req.body.text;
+//             let ids = ZettelKasten.getLinksFromString(searchText);
+//             res.json(ids);
+//         } else {
+//             res.sendStatus(400);
+//         }
+//     }
+//     catch (e) {
+//         console.log(ErrorMessages.unknown,"guid: 915d1e04-6af8-4218-aee7-3b9486c5ccb6");
+//         console.log(e);
+//         res.sendStatus(500);
+//     }
+// });
 
 app.get("/zettels", (req : any, res: any) => {
-
-    if (user == null) {
+    if (zettelDrop.user == null) {
         res.status(400).send("not logged in");
         return;
     } else {
-        let zettels = zettelkasten.getIds(user);
+        if (zettelDrop.zettelKasten == null) {
+            throw new Error(ErrorMessages.OUT_OF_ORDER_EXCEPTION);
+        }
+        console.log("user", zettelDrop.user);
+        let zettels = zettelDrop.zettelKasten.getIds(zettelDrop.user);
         res.json(zettels);
         return;
     }
 });
 
 
-app.post("/zettels/query", (req, res) => {
-    let queryString = req.body.query;
-    if (queryString == null) {
-        res.status(400).send("no query string");
-        return;
-    }
-    if (user == null) {
-        res.status(400).send("not logged in");
-        return;
-    }
-    let username = user.username;
-    let zettels : Zettel[] = zettelkasten.queryZettles(username, queryString);
-    res.json(zettels);
-});
+// app.post("/zettels/query", (req , res) => {
+//     let queryString = req.body.query;
+//     if (queryString == null) {
+//         res.status(400).send("no query string");
+//         return;
+//     }
+//     if (user == null) {
+//         res.status(400).send("not logged in");
+//         return;
+//     }
+//     let username = user.username;
+//     let zettels : Zettel[] = zettelkasten.queryZettles(username, queryString);
+//     res.json(zettels);
+// });
 
 
 app.use('/', express.static('public'));
 
-persistenceLayer.init()
+zettelDrop.init()
 .then(()=>{
-    zettelkasten.loadZettelsFromPersistenceLayer();
+    //zettelkasten.loadZettelsFromPersistenceLayer();
     app.listen(port, () => {
         if (console) {
             console.log(`App listening on port ${port}!`)

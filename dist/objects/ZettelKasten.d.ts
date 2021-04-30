@@ -15,11 +15,12 @@ export declare class ZettelKasten {
     getNewZettelId(): string;
     addZettel(zettel: Zettel): Promise<void>;
     getZettelById(id: string): Zettel | null;
+    userQueryById(username: string, id: string): Zettel | null;
     isZettleExists(id: string): boolean;
     getLinkedZettels(zettel: Zettel): void;
     queryZettles(username: string, queryString: string): Zettel[];
     findZettelsByTags(tags: string[]): void;
     getZettelsByIds(ids: string[]): Zettel[];
-    loadZettelsFromPersistenceLayer(): Promise<void>;
+    loadZettelsFromPersistenceLayer(): Promise<boolean>;
     getIds(user: User): string[];
 }
